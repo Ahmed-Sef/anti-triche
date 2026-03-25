@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Anti-Triche — Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0f172a; color: #fff; font-family: Arial, sans-serif; padding: 20px; }
+    h1 { color: #38bdf8; margin-bottom: 20px; font-size: 24px; }
+    #stats { display: flex; gap: 16px; margin-bottom: 24px; }
+    .stat { background: #1e293b; padding: 16px 24px; border-radius: 10px; text-align: center; }
+    .stat .nombre { font-size: 32px; font-weight: bold; }
+    .stat .label { font-size: 13px; color: #94a3b8; margin-top: 4px; }
+    .rouge { color: #ef4444; }
+    .orange { color: #f97316; }
+    .vert { color: #22c55e; }
+    #alertes { display: flex; flex-direction: column; gap: 10px; }
+    .alerte { background: #1e293b; padding: 14px 18px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid; }
+    .alerte.regard_suspect { border-color: #f97316; }
+    .alerte.visage_cache { border-color: #ef4444; }
+    .alerte .type { font-weight: bold; font-size: 14px; }
+    .alerte .info { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    .alerte .heure { font-size: 13px; color: #64748b; }
+    #status { font-size: 13px; color: #22c55e; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <h1>Système Anti-Triche — Dashboard</h1>
+  <p id="status">Connexion au serveur...</p>
+
+  <div id="stats">
+    <div class="stat">
+      <div class="nombre vert" id="total">0</div>
+      <div class="label">Total alertes</div>
+    </div>
+    <div class="stat">
+      <div class="nombre orange" id="suspects">0</div>
+      <div class="label">Regards suspects</div>
+    </div>
+    <div class="stat">
+      <div class="nombre rouge" id="caches">0</div>
+      <div class="label">Visages cachés</div>
+    </div>
+  </div>
+
+  <div id="alertes"></div>
+
+  <script>
+    function chargerAlertes() {
+      fetch('/alertes')
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById('status').textContent = 'Connecte — mise a jour toutes les 2 secondes';
+
+          document.getElementById('total').textContent = data.length;
+          document.getElementById('suspects').textContent = data.filter(a => a.type === 'regard_suspect').length;
+          document.getElementById('caches').textContent = data.filter(a => a.type === 'visage_cache').length;
+
+          const container = document.getElementById('alertes');
+          container.innerHTML = '';
+
+          [...data].reverse().forEach(alerte => {
+            const div = document.createElement('div');
+            div.className = 'alerte ' + alerte.type;
+            div.innerHTML = `
+              <div>
+                <div class="type">${alerte.type === 'regard_suspect' ? 'Regard suspect' : 'Visage cache'}</div>
+                <div class="info">Camera : ${alerte.camera}</div>
+              </div>
+              <div class="heure">${alerte.heure}</div>
+            `;
+            container.appendChild(div);
+          });
+        })
+        .catch(() => {
+          document.getElementById('status').textContent = 'Serveur non connecte...';
+        });
+    }
+
+    chargerAlertes();
+    setInterval(chargerAlertes, 2000);
+  </script>
+</body>
+</html>
